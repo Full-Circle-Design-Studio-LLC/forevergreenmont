@@ -6,5 +6,6 @@
 
 <a href="<?php echo site_url(); ?>/blog-posts">Posts</a>
 
+adding content. TEST
 
 <?php get_footer(); ?>
