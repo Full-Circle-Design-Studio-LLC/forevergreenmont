@@ -4,7 +4,7 @@
 
 <img src="<?php echo get_template_directory_uri(); ?>/assets/image.jpeg" alt="#" class="col-5 offset-1 float-left">
 
-<a href="<?php echo site_url(); ?>/blog-posts">Blog Posts</a>
+<a href="<?php echo site_url(); ?>/blog-posts">Posts</a>
 
 
 <?php get_footer(); ?>
