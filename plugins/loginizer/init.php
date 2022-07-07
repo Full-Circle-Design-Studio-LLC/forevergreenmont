@@ -5,7 +5,7 @@ if(!function_exists('add_action')){
 	exit;
 }
 
-define('LOGINIZER_VERSION', '1.7.0');
+define('LOGINIZER_VERSION', '1.7.1');
 define('LOGINIZER_DIR', dirname(LOGINIZER_FILE));
 define('LOGINIZER_URL', plugins_url('', LOGINIZER_FILE));
 define('LOGINIZER_PRO_URL', 'https://loginizer.com/features#compare');
@@ -3191,8 +3191,6 @@ function lz_captcha_status(){
 	
 }
 
-lz_captcha_status();
-
 function google_recaptcha_type(){
 	
 	var cur_captcha_type = jQuery("input:radio[name='captcha_type']:checked").val();
@@ -3205,6 +3203,9 @@ function google_recaptcha_type(){
 	
 }
 
+jQuery(document).ready(function(){
+	lz_captcha_status();
+});
 
 </script>
 	
@@ -3229,6 +3230,10 @@ function loginizer_page_2fa(){
 	}
 
 	$lz_roles = get_editable_roles();
+	
+	if(empty($lz_roles)){
+		$lz_roles = array();
+	}
 	
 	/* Make sure post was from this page */
 	if(count($_POST) > 0){
@@ -3307,8 +3312,8 @@ function loginizer_page_2fa(){
 	if(isset($_POST['save_2fa_email_template_lz'])){
 		
 		// In the future there can be more settings
-		$option['2fa_email_sub'] = lz_optpost('lz_2fa_email_sub');
-		$option['2fa_email_msg'] = lz_optpost('lz_2fa_email_msg');
+		$option['2fa_email_sub'] = @stripslashes($_POST['lz_2fa_email_sub']);
+		$option['2fa_email_msg'] = @stripslashes($_POST['lz_2fa_email_msg']);
 		
 		// Is there an error ?
 		if(!empty($lz_error)){
@@ -3619,7 +3624,7 @@ lz_roles_handle();
 					<br />Default : <?php echo @$loginizer['2fa_email_d_sub']; ?>
 				</td>
 				<td valign="top">
-					<input type="text" size="40" value="<?php echo lz_optpost('lz_2fa_email_sub', @$lz_options['2fa_email_sub']); ?>" name="lz_2fa_email_sub" />
+					<input type="text" size="40" value="<?php echo lz_htmlizer(!empty($_POST['lz_2fa_email_sub']) ? stripslashes($_POST['lz_2fa_email_sub']) : @$lz_options['2fa_email_sub']); ?>" name="lz_2fa_email_sub" />
 				</td>
 			</tr>
 			<tr>
@@ -3629,7 +3634,7 @@ lz_roles_handle();
 					<br />Default : <pre style="font-size:10px"><?php echo @$loginizer['2fa_email_d_msg']; ?></pre>
 				</td>
 				<td valign="top">
-					<textarea rows="10" name="lz_2fa_email_msg"><?php echo lz_optpost('lz_2fa_email_msg', @$lz_options['2fa_email_msg']); ?></textarea>
+					<textarea rows="10" name="lz_2fa_email_msg"><?php echo lz_htmlizer(!empty($_POST['lz_2fa_email_msg']) ? stripslashes($_POST['lz_2fa_email_msg']) : @$lz_options['2fa_email_msg']); ?></textarea>
 					<br />
 					Variables :
 					<br />$otp - The OTP for login
@@ -4095,6 +4100,13 @@ function loginizer_page_security(){
 			}
 		}
 		
+		// login slug and admin slug cannot be the same
+		$_loginizer_wp_admin = get_option('loginizer_wp_admin');
+		if(!empty($_loginizer_wp_admin['admin_slug']) && $_loginizer_wp_admin['admin_slug'] == $option['login_slug']){
+			$lz_error['lz_same_slug'] = __('The wp-login.php and wp-admin slugs cannot be the same. Choose unique names for login and admin slugs', 'loginizer');
+			return loginizer_page_security_T();
+		}
+		
 		// XML-RPC Slug Valid ?
 		if(!empty($option['xmlrpc_slug'])){
 			if(strlen($option['xmlrpc_slug']) <= 4 || strlen($option['xmlrpc_slug']) > 50){
@@ -4159,6 +4171,11 @@ function loginizer_page_security(){
 			return loginizer_page_security_T();
 		}
 		
+		$is_super_admin = 0;
+		if(is_multisite() && is_super_admin($old_user->ID)){
+			$is_super_admin = 1;
+		}
+		
 		// Update the username
 		$update_data = array('user_login' => $new_username);
 		$where_data = array('ID' => $old_user->ID);
@@ -4167,6 +4184,25 @@ function loginizer_page_security(){
 		$where_format = array('%d');
 		
 		$wpdb->update($wpdb->prefix.'users', $update_data, $where_data, $format, $where_format);
+		
+		// Update the super admins list for multisite
+		if(!empty($is_super_admin)){
+			
+			$super_admins = get_site_option('site_admins');
+			
+			foreach($super_admins as $sk => $sv){
+				// Remove the existing username from super admins list
+				if($sv == $current_username){
+					unset($super_admins[$sk]);
+				}
+			}
+			
+			// Add the new username
+			$super_admins[] = $new_username;
+			
+			update_site_option( 'site_admins', $super_admins );
+			
+		}
 		
 		// Mark as saved
 		$GLOBALS['lz_saved'] = true;
@@ -4181,6 +4217,13 @@ function loginizer_page_security(){
 		$option['restrict_wp_admin'] = (int) lz_optpost('restrict_wp_admin');
 		$option['wp_admin_msg'] = @stripslashes($_POST['wp_admin_msg']);
 		$lz_wp_admin_docs = (int) lz_optpost('lz_wp_admin_docs');
+		
+		// login slug and admin slug cannot be the same
+		$_loginizer_security = get_option('loginizer_security');
+		if(!empty($_loginizer_security['login_slug']) && $_loginizer_security['login_slug'] == $option['admin_slug']){
+			$lz_error['lz_same_slug'] = __('The wp-login.php and wp-admin slugs cannot be the same. Choose unique names for login and admin slugs', 'loginizer');
+			return loginizer_page_security_T();
+		}
 		
 		// Did you agree to this ?
 		if(!empty($option['admin_slug']) && empty($lz_wp_admin_docs)){

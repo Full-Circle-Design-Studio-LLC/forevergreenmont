@@ -2,9 +2,9 @@
 Contributors: loginizer, pagelayer, softaculous
 Tags: security, access, admin, Loginizer, login, logs, ban ip, failed login, ip, whitelist ip, blacklist ip, failed attempts, lockouts, hack, authentication, login, security, rename login url, rename login, rename wp-admin, secure wp-admin, rename admin url, secure admin, brute force protection
 Requires at least: 3.0
-Tested up to: 5.9
+Tested up to: 6.0
 Requires PHP: 5.5
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: LGPLv2.1
 License URI: http://www.gnu.org/licenses/lgpl-2.1.html
 
@@ -76,6 +76,11 @@ That's it. You're done!
 3. Loginizer Brute Force Settings page
 
 == Changelog ==
+
+= 1.7.1 =
+* [Improvement] [Pro] Added error message to not allow using same slug for wp-login.php and wp-admin as it causes conflict.
+* [Bug Fix] [Pro] In WordPress Multisite, on changing the admin username the super admins list was not updated. This is fixed now. 
+* [Task] Compatibility with WordPress 6.0 
 
 = 1.7.0 =
 * Compatible with WordPress 5.9
